@@ -65,7 +65,7 @@ public sealed class MainForm : Form
     async Task<JsonElement> Rpc(string name,object args)
     {
         if(string.IsNullOrWhiteSpace(baseUrl)||string.IsNullOrWhiteSpace(anonKey))throw new Exception("Configura prima URL e chiave anon di Supabase.");
-        using var req=new HttpRequestMessage(HttpMethod.Post,$"{baseUrl}/rest/v1/rpc/{name}");req.Headers.Add("apikey",anonKey);req.Headers.Add("Authorization","Bearer "+anonKey);req.Content=JsonContent.Create(args);
+        using var req=new HttpRequestMessage(HttpMethod.Post,$"{baseUrl}/rest/v1/rpc/{name}");req.Headers.Add("apikey",anonKey);req.Content=JsonContent.Create(args);
         using var res=await http.SendAsync(req);var text=await res.Content.ReadAsStringAsync();if(!res.IsSuccessStatusCode)throw new Exception(text);using var doc=JsonDocument.Parse(text);return doc.RootElement.Clone();
     }
     async void Join(object? s,EventArgs e){var p=Prompt("Codice numerico workspace","");if(p is null)return;try{var r=await Rpc("read_workspace",new{p_pin=p.Trim()});if(r.ValueKind==JsonValueKind.Null)throw new Exception("Workspace non trovato.");pin=p.Trim();LoadRemote(r);status.Text="Workspace online · "+pin;}catch(Exception ex){Log("Accesso non riuscito: "+ex.Message);}}
