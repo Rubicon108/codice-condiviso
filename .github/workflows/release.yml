@@ -1,0 +1,50 @@
+name: Build Windows and publish site
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'installer.iss'
+      - 'index.html'
+      - 'config.js'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish desktop app
+        run: dotnet publish desktop/CodiceCondiviso.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o desktop/publish
+      - name: Bundle Arduino CLI
+        shell: pwsh
+        run: |
+          $zip = "$env:RUNNER_TEMP/arduino-cli.zip"
+          Invoke-WebRequest "https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Windows_64bit.zip" -OutFile $zip
+          Expand-Archive $zip "$env:RUNNER_TEMP/arduino-cli"
+          Copy-Item "$env:RUNNER_TEMP/arduino-cli/arduino-cli.exe" "desktop/publish/arduino-cli.exe"
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+      - name: Build installer
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CodiceCondiviso-Setup
+          path: output/CodiceCondiviso-Setup.exe
+          if-no-files-found: error
+  website:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - uses: actions/deploy-pages@v4
