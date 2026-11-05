@@ -3,7 +3,7 @@ using System.IO.Ports;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;\nusing System.Text.RegularExpressions;
 
 namespace CodiceCondiviso;
 
@@ -14,7 +14,7 @@ internal static class Program
 
 public sealed class MainForm : Form
 {
-    readonly TextBox code = new() { Multiline=true, AcceptsTab=true, AcceptsReturn=true, ScrollBars=ScrollBars.Both, WordWrap=false, Font=new Font("Consolas",11), Dock=DockStyle.Fill, Text="// Sketch Arduino\r\nvoid setup() {\r\n  Serial.begin(9600);\r\n}\r\n\r\nvoid loop() {\r\n}\r\n" };
+    readonly RichTextBox code = new() { Multiline=true, AcceptsTab=true, AcceptsReturn=true, ScrollBars=ScrollBars.Both, WordWrap=false, Font=new Font("Consolas",11), Dock=DockStyle.Fill, Text="// Sketch Arduino\r\nvoid setup() {\r\n  Serial.begin(9600);\r\n}\r\n\r\nvoid loop() {\r\n}\r\n" };
     readonly TextBox output = new() { Multiline=true, ReadOnly=true, ScrollBars=ScrollBars.Vertical, Dock=DockStyle.Fill, Font=new Font("Consolas",9), BackColor=Color.FromArgb(20,24,29), ForeColor=Color.Gainsboro };
     readonly TextBox serialInput = new() { Width=220 };
     readonly ComboBox ports = new() { Width=100, DropDownStyle=ComboBoxStyle.DropDownList };
@@ -50,7 +50,7 @@ public sealed class MainForm : Form
         Log("Pronto. Compilazione e upload usano Arduino CLI installato nell'app o nel PATH.");
     }
     void LoadConfig(){try{var f=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),"CodiceCondiviso","backend.json");if(File.Exists(f)){using var d=JsonDocument.Parse(File.ReadAllText(f));baseUrl=d.RootElement.GetProperty("url").GetString()??"";anonKey=d.RootElement.GetProperty("key").GetString()??"";status.Text="Backend configurato";}}catch{}}\n    void Add(FlowLayoutPanel p,string label,EventHandler action){var b=new Button{Text=label,AutoSize=true,Height=29,Margin=new Padding(3)};b.Click+=action;p.Controls.Add(b);}
-    void Log(string s){if(output.InvokeRequired){output.BeginInvoke(()=>Log(s));return;} output.AppendText($"[{DateTime.Now:HH:mm:ss}] {s}{Environment.NewLine}");}
+    void Log(string s){if(output.InvokeRequired){output.BeginInvoke((Action)(()=>Log(s)));return;} output.AppendText($"[{DateTime.Now:HH:mm:ss}] {s}{Environment.NewLine}"); HighlightError(s);}
     async void Configure(object? s,EventArgs e)
     {
         var u=Prompt("URL progetto Supabase (es. https://xxxx.supabase.co)",baseUrl); if(u is null)return;
@@ -72,12 +72,12 @@ public sealed class MainForm : Form
     async void SaveWorkspace(){if(pin is null||remoteBusy)return;try{remoteBusy=true;var r=await Rpc("save_workspace",new{p_pin=pin,p_source=code.Text,p_expected_version=version});version=r.GetProperty("version").GetInt64();status.Text="Workspace sincronizzato";}catch(Exception ex){status.Text="Conflitto di modifica · ricarica workspace";Log("Salvataggio remoto: "+ex.Message);}finally{remoteBusy=false;}}
     void OpenLocal(object? s,EventArgs e){using var d=new OpenFileDialog{Filter="Sketch Arduino (*.ino;*.cpp;*.h)|*.ino;*.cpp;*.h|Tutti i file (*.*)|*.*"};if(d.ShowDialog()!=DialogResult.OK)return;code.Text=File.ReadAllText(d.FileName);Tag=d.FileName;Log("Aperto "+d.FileName);}
     void SaveLocal(object? s,EventArgs e){var path=Tag as string;using var d=new SaveFileDialog{Filter="Sketch Arduino (*.ino)|*.ino",FileName=path is null?"sketch.ino":Path.GetFileName(path)};if(path is null){if(d.ShowDialog()!=DialogResult.OK)return;path=d.FileName;Tag=path;}File.WriteAllText(path,code.Text);Log("Salvato "+path);}
-    async void Compile(object? s,EventArgs e)=>await RunCli(false);
+    void HighlightError(string text){var m=Regex.Match(text,@"\\.ino:(\\d+)(?::\\d+)?:\\s*error:",RegexOptions.IgnoreCase);if(!m.Success)return;if(!int.TryParse(m.Groups[1].Value,out var n)||n<1||n>code.Lines.Length)return;int start=0;for(int i=0;i<n-1;i++)start+=code.Lines[i].Length+1;code.Select(start,code.Lines[n-1].Length);code.SelectionBackColor=Color.DarkRed;code.SelectionColor=Color.White;}\n    async void Compile(object? s,EventArgs e)=>await RunCli(false);
     async void Upload(object? s,EventArgs e)=>await RunCli(true);
     async Task RunCli(bool upload)
     {
         var cli=Path.Combine(AppContext.BaseDirectory,"arduino-cli.exe");if(!File.Exists(cli))cli="arduino-cli";
-        var dir=Path.Combine(Path.GetTempPath(),"CodiceCondiviso",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(dir);var file=Path.Combine(dir,Path.GetFileName(dir)+".ino");await File.WriteAllTextAsync(file,code.Text);
+        code.SelectAll();code.SelectionBackColor=code.BackColor;code.SelectionColor=code.ForeColor;code.Select(code.TextLength,0); var dir=Path.Combine(Path.GetTempPath(),"CodiceCondiviso",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(dir);var file=Path.Combine(dir,Path.GetFileName(dir)+".ino");await File.WriteAllTextAsync(file,code.Text);
         var args=upload?$"compile --fqbn arduino:avr:uno --upload --port {ports.Text} \"{dir}\"":$"compile --fqbn arduino:avr:uno \"{dir}\"";
         await ProcessCli(cli,args);
     }
