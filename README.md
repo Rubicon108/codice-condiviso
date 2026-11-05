@@ -6,6 +6,13 @@ Editor collaborativo per sketch Arduino. GitHub Pages ospita l'interfaccia; Supa
 
 Repository iniziale. La sincronizzazione richiede un progetto Supabase configurato; l'app desktop viene compilata da GitHub Actions.
 
+## Uso rapido: host e partecipanti
+
+- Il sito è già ospitato su GitHub Pages: chi partecipa non deve installare né configurare un server.
+- **Host del workspace:** apri il sito, scegli un codice numerico da 6 a 12 cifre, premi **Crea workspace** e condividi quel codice con il gruppo. Se è già in uso, scegline un altro.
+- **Partecipante:** apri lo stesso link, inserisci il codice ricevuto e premi **Entra**. Le modifiche si sincronizzano automaticamente.
+- Per compilare o caricare su una scheda collegata al PC, installa l'app Windows e configura lo stesso URL Supabase e la chiave publishable.
+
 ## Backend Supabase
 
 1. Crea un progetto Supabase.
