@@ -1,6 +1,5 @@
-// Copia l'URL e la chiave anon pubblica da Supabase > Project Settings > API.
-// Non inserire mai service_role o segreti in questo file.
+// Chiave publishable: progettata da Supabase per essere usata dal client pubblico.
 window.APP_CONFIG = {
-  supabaseUrl: "",
-  supabaseAnonKey: ""
+  supabaseUrl: "https://lvncebxkpxaqwhuxpxoh.supabase.co",
+  supabaseAnonKey: "sb_publishable_Hyk9ELWuz6hkKtQg0t-itw_Qm79HLhb"
 };
