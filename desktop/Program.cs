@@ -19,14 +19,14 @@ public sealed class MainForm : Form
     readonly TextBox output = new() { Multiline=true, ReadOnly=true, ScrollBars=ScrollBars.Vertical, Dock=DockStyle.Fill, Font=new Font("Consolas",9), BackColor=Color.FromArgb(20,24,29), ForeColor=Color.Gainsboro };
     readonly TextBox serialInput = new() { Width=220 };
     readonly ComboBox ports = new() { Width=100, DropDownStyle=ComboBoxStyle.DropDownList };
-    readonly Label status = new() { AutoSize=true, Text="Locale · nessuna scheda selezionata" };
+    readonly Label status = new() { AutoSize=true, Text="Backend preconfigurato · scheda non collegata" };
     readonly HttpClient http = new();
     readonly System.Windows.Forms.Timer poll = new() { Interval=2000 };
     readonly System.Windows.Forms.Timer debounce = new() { Interval=650 };
     SerialPort? serial;
     string? pin;
     long version;
-    string baseUrl="", anonKey="";
+    string baseUrl="https://lvncebxkpxaqwhuxpxoh.supabase.co", anonKey="sb_publishable_Hyk9ELWuz6hkKtQg0t-itw_Qm79HLhb";
     bool remoteBusy=false;
     public MainForm()
     {
@@ -64,7 +64,7 @@ public sealed class MainForm : Form
     static string? Prompt(string title,string initial){using var f=new Form{Text=title,Width=540,Height=145,StartPosition=FormStartPosition.CenterParent};var t=new TextBox{Text=initial,Dock=DockStyle.Top};var b=new Button{Text="OK",DialogResult=DialogResult.OK,Dock=DockStyle.Bottom};f.Controls.Add(t);f.Controls.Add(b);f.AcceptButton=b;return f.ShowDialog()==DialogResult.OK?t.Text:null;}
     async Task<JsonElement> Rpc(string name,object args)
     {
-        if(string.IsNullOrWhiteSpace(baseUrl)||string.IsNullOrWhiteSpace(anonKey))throw new Exception("Configura prima URL e chiave anon di Supabase.");
+        if(string.IsNullOrWhiteSpace(baseUrl)||string.IsNullOrWhiteSpace(anonKey))throw new Exception("Verifica la configurazione Supabase (URL e chiave publishable).");
         using var req=new HttpRequestMessage(HttpMethod.Post,$"{baseUrl}/rest/v1/rpc/{name}");req.Headers.Add("apikey",anonKey);req.Content=JsonContent.Create(args);
         using var res=await http.SendAsync(req);var text=await res.Content.ReadAsStringAsync();if(!res.IsSuccessStatusCode)throw new Exception(text);using var doc=JsonDocument.Parse(text);return doc.RootElement.Clone();
     }
