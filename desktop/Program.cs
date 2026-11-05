@@ -3,7 +3,8 @@ using System.IO.Ports;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;\nusing System.Text.RegularExpressions;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace CodiceCondiviso;
 
@@ -20,7 +21,8 @@ public sealed class MainForm : Form
     readonly ComboBox ports = new() { Width=100, DropDownStyle=ComboBoxStyle.DropDownList };
     readonly Label status = new() { AutoSize=true, Text="Locale · nessuna scheda selezionata" };
     readonly HttpClient http = new();
-    readonly System.Windows.Forms.Timer poll = new() { Interval=2000 };\n    readonly System.Windows.Forms.Timer debounce = new() { Interval=650 };
+    readonly System.Windows.Forms.Timer poll = new() { Interval=2000 };
+    readonly System.Windows.Forms.Timer debounce = new() { Interval=650 };
     SerialPort? serial;
     string? pin;
     long version;
@@ -49,7 +51,8 @@ public sealed class MainForm : Form
         FormClosing+=(_,_)=>{try{serial?.Close();}catch{}};
         Log("Pronto. Compilazione e upload usano Arduino CLI installato nell'app o nel PATH.");
     }
-    void LoadConfig(){try{var f=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),"CodiceCondiviso","backend.json");if(File.Exists(f)){using var d=JsonDocument.Parse(File.ReadAllText(f));baseUrl=d.RootElement.GetProperty("url").GetString()??"";anonKey=d.RootElement.GetProperty("key").GetString()??"";status.Text="Backend configurato";}}catch{}}\n    void Add(FlowLayoutPanel p,string label,EventHandler action){var b=new Button{Text=label,AutoSize=true,Height=29,Margin=new Padding(3)};b.Click+=action;p.Controls.Add(b);}
+    void LoadConfig(){try{var f=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),"CodiceCondiviso","backend.json");if(File.Exists(f)){using var d=JsonDocument.Parse(File.ReadAllText(f));baseUrl=d.RootElement.GetProperty("url").GetString()??"";anonKey=d.RootElement.GetProperty("key").GetString()??"";status.Text="Backend configurato";}}catch{}}
+    void Add(FlowLayoutPanel p,string label,EventHandler action){var b=new Button{Text=label,AutoSize=true,Height=29,Margin=new Padding(3)};b.Click+=action;p.Controls.Add(b);}
     void Log(string s){if(output.InvokeRequired){output.BeginInvoke((Action)(()=>Log(s)));return;} output.AppendText($"[{DateTime.Now:HH:mm:ss}] {s}{Environment.NewLine}"); HighlightError(s);}
     async void Configure(object? s,EventArgs e)
     {
@@ -72,7 +75,8 @@ public sealed class MainForm : Form
     async void SaveWorkspace(){if(pin is null||remoteBusy)return;try{remoteBusy=true;var r=await Rpc("save_workspace",new{p_pin=pin,p_source=code.Text,p_expected_version=version});version=r.GetProperty("version").GetInt64();status.Text="Workspace sincronizzato";}catch(Exception ex){status.Text="Conflitto di modifica · ricarica workspace";Log("Salvataggio remoto: "+ex.Message);}finally{remoteBusy=false;}}
     void OpenLocal(object? s,EventArgs e){using var d=new OpenFileDialog{Filter="Sketch Arduino (*.ino;*.cpp;*.h)|*.ino;*.cpp;*.h|Tutti i file (*.*)|*.*"};if(d.ShowDialog()!=DialogResult.OK)return;code.Text=File.ReadAllText(d.FileName);Tag=d.FileName;Log("Aperto "+d.FileName);}
     void SaveLocal(object? s,EventArgs e){var path=Tag as string;using var d=new SaveFileDialog{Filter="Sketch Arduino (*.ino)|*.ino",FileName=path is null?"sketch.ino":Path.GetFileName(path)};if(path is null){if(d.ShowDialog()!=DialogResult.OK)return;path=d.FileName;Tag=path;}File.WriteAllText(path,code.Text);Log("Salvato "+path);}
-    void HighlightError(string text){var m=Regex.Match(text,@"\\.ino:(\\d+)(?::\\d+)?:\\s*error:",RegexOptions.IgnoreCase);if(!m.Success)return;if(!int.TryParse(m.Groups[1].Value,out var n)||n<1||n>code.Lines.Length)return;int start=0;for(int i=0;i<n-1;i++)start+=code.Lines[i].Length+1;code.Select(start,code.Lines[n-1].Length);code.SelectionBackColor=Color.DarkRed;code.SelectionColor=Color.White;}\n    async void Compile(object? s,EventArgs e)=>await RunCli(false);
+    void HighlightError(string text){var m=Regex.Match(text,@"\.ino:(\d+)(?::\d+)?:\s*error:",RegexOptions.IgnoreCase);if(!m.Success)return;if(!int.TryParse(m.Groups[1].Value,out var n)||n<1||n>code.Lines.Length)return;int start=0;for(int i=0;i<n-1;i++)start+=code.Lines[i].Length+1;code.Select(start,code.Lines[n-1].Length);code.SelectionBackColor=Color.DarkRed;code.SelectionColor=Color.White;}
+    async void Compile(object? s,EventArgs e)=>await RunCli(false);
     async void Upload(object? s,EventArgs e)=>await RunCli(true);
     async Task RunCli(bool upload)
     {
