@@ -20,7 +20,7 @@ public sealed class MainForm : Form
     readonly ComboBox ports = new() { Width=100, DropDownStyle=ComboBoxStyle.DropDownList };
     readonly Label status = new() { AutoSize=true, Text="Locale · nessuna scheda selezionata" };
     readonly HttpClient http = new();
-    readonly System.Windows.Forms.Timer poll = new() { Interval=2000 };
+    readonly System.Windows.Forms.Timer poll = new() { Interval=2000 };\n    readonly System.Windows.Forms.Timer debounce = new() { Interval=650 };
     SerialPort? serial;
     string? pin;
     long version;
@@ -45,11 +45,11 @@ public sealed class MainForm : Form
         serialRow.Controls.Add(serialInput); var send=new Button{Text="Invia",AutoSize=true};send.Click+=async(_,_)=>await SendSerial();serialRow.Controls.Add(send);
         var connect=new Button{Text="Connetti seriale",AutoSize=true};connect.Click+=(_,_)=>ConnectSerial();serialRow.Controls.Add(connect);
         bottom.Controls.Add(serialRow,0,1);split.Panel2.Controls.Add(bottom);Controls.Add(split); Controls.Add(top);
-        ports.DataSource=SerialPort.GetPortNames(); poll.Tick+=async(_,_)=>await PollRemote();poll.Start();
+        ports.DataSource=SerialPort.GetPortNames(); poll.Tick+=async(_,_)=>await PollRemote();poll.Start(); debounce.Tick+=(_,_)=>{debounce.Stop();SaveWorkspace();}; code.TextChanged+=(_,_)=>{if(pin is not null&&!remoteBusy){debounce.Stop();debounce.Start();}}; LoadConfig();
         FormClosing+=(_,_)=>{try{serial?.Close();}catch{}};
         Log("Pronto. Compilazione e upload usano Arduino CLI installato nell'app o nel PATH.");
     }
-    void Add(FlowLayoutPanel p,string label,EventHandler action){var b=new Button{Text=label,AutoSize=true,Height=29,Margin=new Padding(3)};b.Click+=action;p.Controls.Add(b);}
+    void LoadConfig(){try{var f=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),"CodiceCondiviso","backend.json");if(File.Exists(f)){using var d=JsonDocument.Parse(File.ReadAllText(f));baseUrl=d.RootElement.GetProperty("url").GetString()??"";anonKey=d.RootElement.GetProperty("key").GetString()??"";status.Text="Backend configurato";}}catch{}}\n    void Add(FlowLayoutPanel p,string label,EventHandler action){var b=new Button{Text=label,AutoSize=true,Height=29,Margin=new Padding(3)};b.Click+=action;p.Controls.Add(b);}
     void Log(string s){if(output.InvokeRequired){output.BeginInvoke(()=>Log(s));return;} output.AppendText($"[{DateTime.Now:HH:mm:ss}] {s}{Environment.NewLine}");}
     async void Configure(object? s,EventArgs e)
     {
@@ -67,7 +67,7 @@ public sealed class MainForm : Form
     }
     async void Join(object? s,EventArgs e){var p=Prompt("Codice numerico workspace","");if(p is null)return;try{var r=await Rpc("read_workspace",new{p_pin=p.Trim()});if(r.ValueKind==JsonValueKind.Null)throw new Exception("Workspace non trovato.");pin=p.Trim();LoadRemote(r);status.Text="Workspace online · "+pin;}catch(Exception ex){Log("Accesso non riuscito: "+ex.Message);}}
     async void Create(object? s,EventArgs e){var p=Prompt("Scegli codice numerico (6–12 cifre)","");if(p is null)return;try{var r=await Rpc("create_workspace",new{p_pin=p.Trim(),p_title="Sketch condiviso",p_source=code.Text});pin=p.Trim();LoadRemote(r);status.Text="Workspace creato · "+pin;Log("Workspace online creato.");}catch(Exception ex){Log("Creazione non riuscita: "+ex.Message);}}
-    void LoadRemote(JsonElement r){version=r.GetProperty("version").GetInt64();code.Text=r.GetProperty("source").GetString()??"";remoteBusy=true;remoteBusy=false;poll.Enabled=true;}
+    void LoadRemote(JsonElement r){remoteBusy=true;version=r.GetProperty("version").GetInt64();code.Text=r.GetProperty("source").GetString()??"";remoteBusy=false;poll.Enabled=true;}
     async Task PollRemote(){if(pin is null||remoteBusy)return;try{var r=await Rpc("read_workspace",new{p_pin=pin});if(r.ValueKind==JsonValueKind.Null)return;var v=r.GetProperty("version").GetInt64();var src=r.GetProperty("source").GetString()??"";if(v>version&& !code.Focused){remoteBusy=true;code.Text=src;version=v;remoteBusy=false;status.Text="Aggiornato dal workspace";}}catch{}}
     async void SaveWorkspace(){if(pin is null||remoteBusy)return;try{remoteBusy=true;var r=await Rpc("save_workspace",new{p_pin=pin,p_source=code.Text,p_expected_version=version});version=r.GetProperty("version").GetInt64();status.Text="Workspace sincronizzato";}catch(Exception ex){status.Text="Conflitto di modifica · ricarica workspace";Log("Salvataggio remoto: "+ex.Message);}finally{remoteBusy=false;}}
     void OpenLocal(object? s,EventArgs e){using var d=new OpenFileDialog{Filter="Sketch Arduino (*.ino;*.cpp;*.h)|*.ino;*.cpp;*.h|Tutti i file (*.*)|*.*"};if(d.ShowDialog()!=DialogResult.OK)return;code.Text=File.ReadAllText(d.FileName);Tag=d.FileName;Log("Aperto "+d.FileName);}
@@ -77,7 +77,7 @@ public sealed class MainForm : Form
     async Task RunCli(bool upload)
     {
         var cli=Path.Combine(AppContext.BaseDirectory,"arduino-cli.exe");if(!File.Exists(cli))cli="arduino-cli";
-        var dir=Path.Combine(Path.GetTempPath(),"CodiceCondiviso",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(dir);var file=Path.Combine(dir,"sketch.ino");await File.WriteAllTextAsync(file,code.Text);
+        var dir=Path.Combine(Path.GetTempPath(),"CodiceCondiviso",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(dir);var file=Path.Combine(dir,Path.GetFileName(dir)+".ino");await File.WriteAllTextAsync(file,code.Text);
         var args=upload?$"compile --fqbn arduino:avr:uno --upload --port {ports.Text} \"{dir}\"":$"compile --fqbn arduino:avr:uno \"{dir}\"";
         await ProcessCli(cli,args);
     }
