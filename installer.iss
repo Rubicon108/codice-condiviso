@@ -1,7 +1,7 @@
 [Setup]
 AppId={{A0E47494-C514-4F34-9CA9-8541C60B3AE1}
 AppName=Codice Condiviso
-AppVersion=0.1.0
+AppVersion=0.2.0
 AppPublisher=Rubicon108
 DefaultDirName={autopf}\Codice Condiviso
 DefaultGroupName=Codice Condiviso
