@@ -15,10 +15,10 @@ internal static class Program
 
 public sealed class MainForm : Form
 {
-    readonly RichTextBox code = new() { Multiline=true, AcceptsTab=true, ScrollBars=RichTextBoxScrollBars.Both, WordWrap=false, Font=new Font("Consolas",11), Dock=DockStyle.Fill, Text="// Sketch Arduino\r\nvoid setup() {\r\n  Serial.begin(9600);\r\n}\r\n\r\nvoid loop() {\r\n}\r\n" };
-    readonly TextBox output = new() { Multiline=true, ReadOnly=true, ScrollBars=ScrollBars.Vertical, Dock=DockStyle.Fill, Font=new Font("Consolas",9), BackColor=Color.FromArgb(20,24,29), ForeColor=Color.Gainsboro };
-    readonly TextBox serialInput = new() { Width=220 };
-    readonly ComboBox ports = new() { Width=100, DropDownStyle=ComboBoxStyle.DropDownList };
+    readonly RichTextBox code = new() { Multiline=true, AcceptsTab=true, ScrollBars=RichTextBoxScrollBars.Both, WordWrap=false, Font=new Font("Consolas",11), BackColor=Color.FromArgb(11,17,16), ForeColor=Color.FromArgb(232,241,235), BorderStyle=BorderStyle.None, HideSelection=false, Dock=DockStyle.Fill, Text="// Sketch Arduino\r\nvoid setup() {\r\n  Serial.begin(9600);\r\n}\r\n\r\nvoid loop() {\r\n}\r\n" };
+    readonly TextBox output = new() { Multiline=true, ReadOnly=true, ScrollBars=ScrollBars.Vertical, Dock=DockStyle.Fill, Font=new Font("Consolas",9), BackColor=Color.FromArgb(19,28,25), ForeColor=Color.FromArgb(185,201,192), BorderStyle=BorderStyle.None };
+    readonly TextBox serialInput = new() { Width=220, BackColor=Color.FromArgb(19,28,25), ForeColor=Color.FromArgb(232,241,235), BorderStyle=BorderStyle.FixedSingle };
+    readonly ComboBox ports = new() { Width=100, DropDownStyle=ComboBoxStyle.DropDownList, BackColor=Color.FromArgb(19,28,25), ForeColor=Color.FromArgb(232,241,235), FlatStyle=FlatStyle.Flat };
     readonly Label status = new() { AutoSize=true, Text="Backend preconfigurato · scheda non collegata" };
     readonly HttpClient http = new();
     readonly System.Windows.Forms.Timer poll = new() { Interval=2000 };
@@ -30,29 +30,29 @@ public sealed class MainForm : Form
     bool remoteBusy=false;
     public MainForm()
     {
-        Text="Codice Condiviso · Arduino"; Width=1100; Height=760; MinimumSize=new Size(800,600); BackColor=Color.FromArgb(13,17,23); ForeColor=Color.Gainsboro;
-        var top=new FlowLayoutPanel { Dock=DockStyle.Top, Height=48, Padding=new Padding(8), BackColor=Color.FromArgb(22,27,34), WrapContents=false };
+        Text="Codice Condiviso · Arduino"; Width=1180; Height=780; MinimumSize=new Size(900,620); BackColor=Color.FromArgb(11,17,16); ForeColor=Color.FromArgb(232,241,235); Font=new Font("Segoe UI",9F);
+        var top=new FlowLayoutPanel { Dock=DockStyle.Top, Height=78, Padding=new Padding(10,8,10,6), BackColor=Color.FromArgb(19,28,25), WrapContents=true };
         Add(top,"Apri locale",OpenLocal); Add(top,"Salva locale",SaveLocal); Add(top,"Apri workspace",Join); Add(top,"Nuovo workspace",Create); Add(top,"Configura backend",Configure);
         Add(top,"Installa core Uno",InstallCore); Add(top,"Compila",Compile); Add(top,"Carica",Upload);
-        var portLabel=new Label { Text="Porta:", AutoSize=true, Padding=new Padding(4,8,0,0) }; top.Controls.Add(portLabel);
+        var portLabel=new Label { Text="PORTA", AutoSize=true, Padding=new Padding(6,8,0,0), ForeColor=Color.FromArgb(145,163,154), Font=new Font("Segoe UI",8F,FontStyle.Bold) }; top.Controls.Add(portLabel);
         top.Controls.Add(ports); Add(top,"↻",RefreshPorts);
-        status.Margin=new Padding(12,9,2,0);top.Controls.Add(status);
-        var split=new SplitContainer { Dock=DockStyle.Fill, Orientation=Orientation.Horizontal, SplitterDistance=470, BackColor=Color.FromArgb(48,54,61) };
-        split.Panel1.Controls.Add(code);
+        status.Margin=new Padding(10,9,2,0);status.ForeColor=Color.FromArgb(181,243,106);top.Controls.Add(status);
+        var split=new SplitContainer { Dock=DockStyle.Fill, Orientation=Orientation.Horizontal, SplitterDistance=470, BackColor=Color.FromArgb(43,59,52), BorderStyle=BorderStyle.None, SplitterWidth=5 };
+        split.Panel1.BackColor=Color.FromArgb(11,17,16); split.Panel1.Controls.Add(code);
         var bottom=new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=1, RowCount=2 };
         bottom.RowStyles.Add(new RowStyle(SizeType.Percent,75)); bottom.RowStyles.Add(new RowStyle(SizeType.Percent,25));
         bottom.Controls.Add(output,0,0);
-        var serialRow=new FlowLayoutPanel { Dock=DockStyle.Fill, Padding=new Padding(8), WrapContents=false };
-        serialRow.Controls.Add(new Label{Text="Monitor seriale · 9600 baud",AutoSize=true,Padding=new Padding(0,5,8,0)});
-        serialRow.Controls.Add(serialInput); var send=new Button{Text="Invia",AutoSize=true};send.Click+=async(_,_)=>await SendSerial();serialRow.Controls.Add(send);
-        var connect=new Button{Text="Connetti seriale",AutoSize=true};connect.Click+=(_,_)=>ConnectSerial(this,EventArgs.Empty);serialRow.Controls.Add(connect);
+        var serialRow=new FlowLayoutPanel { Dock=DockStyle.Fill, Padding=new Padding(10), WrapContents=false, BackColor=Color.FromArgb(19,28,25) };
+        serialRow.Controls.Add(new Label{Text="MONITOR SERIALE  ·  9600 BAUD",AutoSize=true,Padding=new Padding(0,6,8,0),ForeColor=Color.FromArgb(181,243,106),Font=new Font("Segoe UI",8F,FontStyle.Bold)});
+        serialRow.Controls.Add(serialInput); var send=new Button{Text="Invia",AutoSize=true};StyleButton(send,true);send.Click+=async(_,_)=>await SendSerial();serialRow.Controls.Add(send);
+        var connect=new Button{Text="Connetti seriale",AutoSize=true};StyleButton(connect,false);connect.Click+=(_,_)=>ConnectSerial(this,EventArgs.Empty);serialRow.Controls.Add(connect);
         bottom.Controls.Add(serialRow,0,1);split.Panel2.Controls.Add(bottom);Controls.Add(split); Controls.Add(top);
         ports.DataSource=SerialPort.GetPortNames(); poll.Tick+=async(_,_)=>await PollRemote();poll.Start(); debounce.Tick+=(_,_)=>{debounce.Stop();SaveWorkspace();}; code.TextChanged+=(_,_)=>{if(pin is not null&&!remoteBusy){debounce.Stop();debounce.Start();}}; LoadConfig();
         FormClosing+=(_,_)=>{try{serial?.Close();}catch{}};
         Log("Pronto. Compilazione e upload usano Arduino CLI installato nell'app o nel PATH.");
     }
     void LoadConfig(){try{var f=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),"CodiceCondiviso","backend.json");if(File.Exists(f)){using var d=JsonDocument.Parse(File.ReadAllText(f));baseUrl=d.RootElement.GetProperty("url").GetString()??"";anonKey=d.RootElement.GetProperty("key").GetString()??"";status.Text="Backend configurato";}}catch{}}
-    void Add(FlowLayoutPanel p,string label,EventHandler action){var b=new Button{Text=label,AutoSize=true,Height=29,Margin=new Padding(3)};b.Click+=action;p.Controls.Add(b);}
+    void StyleButton(Button b,bool primary){b.FlatStyle=FlatStyle.Flat;b.FlatAppearance.BorderColor=primary?Color.FromArgb(181,243,106):Color.FromArgb(43,59,52);b.FlatAppearance.MouseOverBackColor=primary?Color.FromArgb(196,255,130):Color.FromArgb(35,49,42);b.BackColor=primary?Color.FromArgb(181,243,106):Color.FromArgb(26,39,33);b.ForeColor=primary?Color.FromArgb(11,17,16):Color.FromArgb(222,233,225);b.Font=new Font("Segoe UI",8.5F,FontStyle.Bold);b.Padding=new Padding(8,2,8,2);}\n    void Add(FlowLayoutPanel p,string label,EventHandler action){var b=new Button{Text=label,AutoSize=true,Height=31,Margin=new Padding(4)};StyleButton(b,label=="Compila"||label=="Carica");b.Click+=action;p.Controls.Add(b);}
     void Log(string s){if(output.InvokeRequired){output.BeginInvoke((Action)(()=>Log(s)));return;} output.AppendText($"[{DateTime.Now:HH:mm:ss}] {s}{Environment.NewLine}"); HighlightError(s);}
     async void Configure(object? s,EventArgs e)
     {
