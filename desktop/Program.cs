@@ -15,7 +15,7 @@ internal static class Program
 
 public sealed class MainForm : Form
 {
-    readonly RichTextBox code = new() { Multiline=true, AcceptsTab=true, AcceptsReturn=true, ScrollBars=ScrollBars.Both, WordWrap=false, Font=new Font("Consolas",11), Dock=DockStyle.Fill, Text="// Sketch Arduino\r\nvoid setup() {\r\n  Serial.begin(9600);\r\n}\r\n\r\nvoid loop() {\r\n}\r\n" };
+    readonly RichTextBox code = new() { Multiline=true, AcceptsTab=true, ScrollBars=RichTextBoxScrollBars.Both, WordWrap=false, Font=new Font("Consolas",11), Dock=DockStyle.Fill, Text="// Sketch Arduino\r\nvoid setup() {\r\n  Serial.begin(9600);\r\n}\r\n\r\nvoid loop() {\r\n}\r\n" };
     readonly TextBox output = new() { Multiline=true, ReadOnly=true, ScrollBars=ScrollBars.Vertical, Dock=DockStyle.Fill, Font=new Font("Consolas",9), BackColor=Color.FromArgb(20,24,29), ForeColor=Color.Gainsboro };
     readonly TextBox serialInput = new() { Width=220 };
     readonly ComboBox ports = new() { Width=100, DropDownStyle=ComboBoxStyle.DropDownList };
@@ -45,7 +45,7 @@ public sealed class MainForm : Form
         var serialRow=new FlowLayoutPanel { Dock=DockStyle.Fill, Padding=new Padding(8), WrapContents=false };
         serialRow.Controls.Add(new Label{Text="Monitor seriale · 9600 baud",AutoSize=true,Padding=new Padding(0,5,8,0)});
         serialRow.Controls.Add(serialInput); var send=new Button{Text="Invia",AutoSize=true};send.Click+=async(_,_)=>await SendSerial();serialRow.Controls.Add(send);
-        var connect=new Button{Text="Connetti seriale",AutoSize=true};connect.Click+=(_,_)=>ConnectSerial();serialRow.Controls.Add(connect);
+        var connect=new Button{Text="Connetti seriale",AutoSize=true};connect.Click+=(_,_)=>ConnectSerial(this,EventArgs.Empty);serialRow.Controls.Add(connect);
         bottom.Controls.Add(serialRow,0,1);split.Panel2.Controls.Add(bottom);Controls.Add(split); Controls.Add(top);
         ports.DataSource=SerialPort.GetPortNames(); poll.Tick+=async(_,_)=>await PollRemote();poll.Start(); debounce.Tick+=(_,_)=>{debounce.Stop();SaveWorkspace();}; code.TextChanged+=(_,_)=>{if(pin is not null&&!remoteBusy){debounce.Stop();debounce.Start();}}; LoadConfig();
         FormClosing+=(_,_)=>{try{serial?.Close();}catch{}};
