@@ -10,7 +10,7 @@ Repository iniziale. La sincronizzazione richiede un progetto Supabase configura
 
 1. Crea un progetto Supabase.
 2. Esegui `backend/schema.sql` nell'SQL Editor.
-3. Copia l'URL progetto e la chiave publishable (`sb_publishable_…`) nel file `config.js` nella radice (compila `supabaseUrl` e `supabaseAnonKey`).
+3. Copia l'URL progetto e la chiave publishable (`sb_publishable_…`) nell'oggetto `window.APP_CONFIG` all'inizio di `index.html` (`supabaseUrl` e `supabaseAnonKey`).
 4. Pubblica il sito con GitHub Actions. In Settings → Pages scegli GitHub Actions.
 
 Il PIN separa i workspace, ma non è autenticazione forte. Chi lo conosce può leggere e modificare quel workspace. Non inserire segreti o credenziali negli sketch condivisi.
