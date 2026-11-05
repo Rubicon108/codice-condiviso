@@ -57,7 +57,7 @@ public sealed class MainForm : Form
     async void Configure(object? s,EventArgs e)
     {
         var u=Prompt("URL progetto Supabase (es. https://xxxx.supabase.co)",baseUrl); if(u is null)return;
-        var k=Prompt("Chiave anon pubblica Supabase",anonKey); if(k is null)return;
+        var k=Prompt("Chiave publishable Supabase (sb_publishable_...)",anonKey); if(k is null)return;
         baseUrl=u.TrimEnd('/');anonKey=k.Trim(); var dir=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),"CodiceCondiviso");Directory.CreateDirectory(dir);
         await File.WriteAllTextAsync(Path.Combine(dir,"backend.json"),JsonSerializer.Serialize(new {url=baseUrl,key=anonKey}));status.Text="Backend configurato";
     }
