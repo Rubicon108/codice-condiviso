@@ -24,7 +24,7 @@ Il PIN separa i workspace, ma non è autenticazione forte. Chi lo conosce può l
 
 ## App Windows
 
-Il workflow `Build Windows` pubblica `CodiceCondiviso-Setup.exe` come artifact. L'app usa Arduino CLI locale: collega la scheda al PC, seleziona la porta COM e installa il core della scheda con Arduino CLI prima del primo build. La seriale è impostata a 9600 baud.
+Il workflow `Build Windows` pubblica `CodiceCondiviso-Setup.exe` come artifact. L'app usa Arduino CLI locale e rileva automaticamente le schede collegate, aggiornando la porta e il modello identificato. Se il core della scheda non è installato, usa **Installa core scheda**; per aggiungere librerie Arduino usa **Librerie…** e inserisci il nome della libreria. Compilazione e upload usano il modello rilevato. Il monitor seriale è impostato a 9600 baud.
 
 ## Dominio
 
