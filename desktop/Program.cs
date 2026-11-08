@@ -39,7 +39,7 @@ public sealed class MainForm : Form
         Text="Codice Condiviso · Arduino"; Width=1180; Height=780; MinimumSize=new Size(900,620); BackColor=Color.FromArgb(11,17,16); ForeColor=Color.FromArgb(232,241,235); Font=new Font("Segoe UI",9F);
         var top=new FlowLayoutPanel { Dock=DockStyle.Top, Height=78, Padding=new Padding(10,8,10,6), BackColor=Color.FromArgb(19,28,25), WrapContents=true };
         Add(top,"Apri locale",OpenLocal); Add(top,"Salva locale",SaveLocal); Add(top,"Apri workspace",Join); Add(top,"Nuovo workspace",Create); Add(top,"Configura backend",Configure);
-        Add(top,"Installa core scheda",InstallCore); Add(top,"Librerie…",ManageLibraries); Add(top,"Compila",Compile); Add(top,"Carica",Upload);
+        Add(top,"Modello…",ChooseBoard); Add(top,"Installa core scheda",InstallCore); Add(top,"Librerie…",ManageLibraries); Add(top,"Compila",Compile); Add(top,"Carica",Upload);
         var portLabel=new Label { Text="SCHEDA", AutoSize=true, Padding=new Padding(6,8,0,0), ForeColor=Color.FromArgb(145,163,154), Font=new Font("Segoe UI",8F,FontStyle.Bold) }; top.Controls.Add(portLabel);
         top.Controls.Add(ports); Add(top,"Rileva schede",RefreshPorts);
         status.Margin=new Padding(10,9,2,0);status.ForeColor=Color.FromArgb(181,243,106);top.Controls.Add(status);
@@ -105,7 +105,18 @@ public sealed class MainForm : Form
     {
         var name=Prompt("Scarica libreria Arduino","Wire");if(string.IsNullOrWhiteSpace(name))return;
         Log($"Download e installazione libreria: {name.Trim()}…");
+        await ProcessCli(CliPath(),"lib","update-index");
         await ProcessCli(CliPath(),"lib","install",name.Trim());
+    }
+    void ChooseBoard(object? s,EventArgs e)
+    {
+        if(ports.SelectedItem is not BoardChoice board){Log("Collega prima la scheda al PC.");return;}
+        var example=board.Fqbn??"arduino:avr:uno";
+        var fqbn=Prompt("Modello Arduino (FQBN, per esempio arduino:avr:uno)",example);
+        if(string.IsNullOrWhiteSpace(fqbn))return;
+        var value=fqbn.Trim();var name=value.Split(':').Last();var chosen=new BoardChoice(board.Port,name,value);
+        var index=ports.SelectedIndex;if(index>=0){ports.Items[index]=chosen;ports.SelectedItem=chosen;}
+        status.Text=$"{name} selezionata · {board.Port}";Log($"Modello impostato: {value}. Usa Installa core scheda se il core manca.");
     }
     async void RefreshPorts(object? s,EventArgs e)=>await DetectBoards(true);
     bool detectingBoards;
@@ -129,7 +140,9 @@ public sealed class MainForm : Form
                     found[port]=new BoardChoice(port,name??"Scheda Arduino",fqbn);
                 }
             foreach(var port in SerialPort.GetPortNames())if(!found.ContainsKey(port))found[port]=new BoardChoice(port,"Scheda non identificata",null);
-            var old=ports.SelectedItem as BoardChoice;ports.BeginUpdate();ports.Items.Clear();foreach(var item in found.Values.OrderBy(x=>x.Port,StringComparer.OrdinalIgnoreCase))ports.Items.Add(item);
+            var old=ports.SelectedItem as BoardChoice;
+            if(old?.Fqbn is not null&&found.TryGetValue(old.Port,out var detectedBoard)&&detectedBoard.Fqbn is null)found[old.Port]=old;
+            ports.BeginUpdate();ports.Items.Clear();foreach(var item in found.Values.OrderBy(x=>x.Port,StringComparer.OrdinalIgnoreCase))ports.Items.Add(item);
             var selected=old is null?null:found.Values.FirstOrDefault(x=>x.Port.Equals(old.Port,StringComparison.OrdinalIgnoreCase));if(selected is not null)ports.SelectedItem=selected;else if(ports.Items.Count>0)ports.SelectedIndex=0;ports.EndUpdate();
             if(found.Count==0)status.Text="Nessuna scheda collegata";
             else if(ports.SelectedItem is BoardChoice b)status.Text=b.Fqbn is null?$"Porta {b.Port} rilevata · modello non identificato":$"{b.Name} rilevata · {b.Port}";
